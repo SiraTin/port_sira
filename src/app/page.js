@@ -1,101 +1,158 @@
-import Image from "next/image";
+"use client";
+import { useEffect, useState } from "react";
+import { useGSAP } from "@gsap/react";
+import Navbar from "./layouts/navbar";
+import HomePage from "./components/homePage";
+import AboutMe from "./components/aboutMe";
+import { Observer } from "gsap/all";
+import { ScrollTrigger } from "gsap/all";
+import { ScrollToPlugin } from "gsap/all";
+import gsap from "gsap";
+import MyDemos from "./components/myDemos";
+import ContactUs from "./components/contactUs";
+
+gsap.registerPlugin(ScrollTrigger, Observer, ScrollToPlugin);
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.js
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  useGSAP(() => {
+    //content
+    let sections = gsap.utils.toArray("section"),
+      images = gsap.utils.toArray(".bg"),
+      outerWrappers = gsap.utils.toArray(".outer"),
+      innerWrappers = gsap.utils.toArray(".inner"),
+      currentIndex = -1,
+      wrap = gsap.utils.wrap(0, sections.length),
+      animating;
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    gsap.set(outerWrappers, { yPercent: 100 });
+    gsap.set(innerWrappers, { yPercent: -100 });
+
+    function gotoSection(index, direction) {
+      index = wrap(index);
+      animating = true;
+      let fromTop = direction === -1,
+        dFactor = fromTop ? -1 : 1,
+        tl = gsap.timeline({
+          defaults: { duration: 1.25, ease: "power1.inOut" },
+          onComplete: () => (animating = false),
+        });
+      if (currentIndex >= 0) {
+        gsap.set(sections[currentIndex], { zIndex: 0 });
+        tl.to(images[currentIndex], { yPercent: -15 * dFactor }).set(
+          sections[currentIndex],
+          { autoAlpha: 0 }
+        );
+      }
+      gsap.set(sections[index], { autoAlpha: 1, zIndex: 1 });
+      tl.fromTo(
+        [outerWrappers[index], innerWrappers[index]],
+        {
+          yPercent: (i) => (i ? -100 * dFactor : 100 * dFactor),
+        },
+        {
+          yPercent: 0,
+        },
+        0
+      ).fromTo(images[index], { yPercent: 15 * dFactor }, { yPercent: 0 }, 0);
+      currentIndex = index;
+
+          
+      //nav background
+      let navTl;
+      if(currentIndex !== 0){
+        navTl = gsap.timeline();
+        navTl.to(".navbar", {backgroundColor: "rgba(0,0,0,0.5)", duration: 1})
+      }else{
+        navTl = gsap.timeline();
+        navTl.to(".navbar", {backgroundColor: "rgba(0,0,0,0", duration: 1})
+      }
+
+      //nav border
+      let border = gsap.utils.toArray(".anchor");
+      for(let i = 0; i < border.length; i++){
+        if(currentIndex == i){
+          border[i].classList.remove("after:w-0")
+          border[i].classList.add("after:w-full")
+        }else{
+          border[i].classList.remove("after:w-full")
+          border[i].classList.add("after:w-0")
+        }
+      }
+
+
+    //about me
+    if(currentIndex == 1){
+      let aboutTl = gsap.timeline();
+      aboutTl.fromTo("#scrambleText", {opacity: 0}, {
+        opacity: 1,
+          
+        scrambleText: {
+          text: "About me",
+          chars: " ",
+          revealDelay: 0.5,
+          speed: 2,
+        },
+      })
+      .fromTo(".about", {opacity:0, y:50}, {opacity:1, y:0, duration: 2})
+      .fromTo(".description", {opacity:0, x:-50}, {opacity:1, x:0, duration: 2});
+    }
+
+
+    //my demos
+    if(currentIndex == 2){
+      let demosTl = gsap.timeline();
+      demosTl.fromTo("#mySkill", {opacity:0, y:50}, {opacity:1, y:0, duration: 2})
+      .fromTo("#demos", {opacity:0, x:-50}, {opacity:1, x:0, duration: 2});
+    }
+
+    //my demos
+    if(currentIndex == 3){
+      let contactTl = gsap.timeline();
+      contactTl.fromTo("#contactUS", {opacity:0, y:50}, {opacity:1, y:0, duration: 2})
+    }
+    
+    
+    }
+    Observer.create({
+      type: "wheel, touch, pointer",
+      wheelSpeed: -1,
+      onDown: () => !animating && gotoSection(currentIndex - 1, -1),
+      onUp: () => !animating && gotoSection(currentIndex + 1, 1),
+      tolerance: 10,
+      preventDefault: true,
+    });
+
+    gotoSection(0, 1);
+
+
+    //navbar
+    let anchor = gsap.utils.toArray(".anchor");
+    anchor.forEach((anchor) => {
+      anchor.addEventListener("click", function (e) {
+        e.preventDefault();
+        let targetElem = document.querySelector(e.target.getAttribute("href"))
+        for (let i = 0; i < sections.length; i++) {
+          if (i !== currentIndex) {
+            if (targetElem === sections[i]) {
+              gotoSection(i, 1);
+            }
+          }
+        }
+      });
+    });
+  }, []);
+
+  return (
+    <>
+      <Navbar />
+      <main className="w-full h-full" id="main">
+        <div id="controller">
+          <HomePage />
+          <AboutMe />
+          <MyDemos />
+          <ContactUs/>
         </div>
       </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+    </>
   );
 }
